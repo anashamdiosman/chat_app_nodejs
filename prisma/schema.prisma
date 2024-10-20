@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  user_id           Int       @id @default(autoincrement())
+  uuid              String    @unique @default(uuid())
+  email             String    @unique
+  username          String    @unique
+  password          String
+  full_name         String?
+  date_of_birth     DateTime?
+  last_login        DateTime?
+  refresh_tokens    String[]
+  roles             Int[]     @default([1])
+  user_prefrence_id Int?      @unique
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  messages_sent     Message[]      @relation("SentMessages")
+  messages_received Message[]      @relation("ReceivedMessages")
+  user_prefrence    UserPrefrence? @relation(fields: [user_prefrence_id], references: [id])
+}
+
+model UserPrefrence {
+  id            Int          @id @default(autoincrement())
+  theme         ThemeEnum
+  language      LanguageEnum
+  email_updates Boolean      @default(true)
+
+  user User?
+}
+
+model Message {
+  message_id      Int      @id @default(autoincrement())
+  message_content String
+  message_body    String
+  is_deleted      Boolean?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  reply_to_id      Int?
+  sender_user_id   Int
+  receiver_user_id Int
+
+  sender   User      @relation(name: "SentMessages", fields: [sender_user_id], references: [user_id])
+  receiver User      @relation(name: "ReceivedMessages", fields: [receiver_user_id], references: [user_id])
+  reply_to Message?  @relation("MessageReply", fields: [reply_to_id], references: [message_id])
+  replies  Message[] @relation("MessageReply")
+}
+
+enum ThemeEnum {
+  DARK
+  LIGHT
+}
+
+enum LanguageEnum {
+  AR
+  EN
+}
